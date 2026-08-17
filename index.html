@@ -217,6 +217,12 @@
 </head>
 <body>
 
+<!-- Espelha o mesmo site externo que alterna no Painel -->
+<div id="site-externo-overlay" style="position:fixed; inset:0; z-index:999; background:#000; opacity:0; pointer-events:none; transition:opacity .8s ease;">
+  <iframe id="site-externo-frame" style="width:100%; height:100%; border:none;"></iframe>
+</div>
+<style>#site-externo-overlay.visivel{ opacity:1; }</style>
+
 <div class="hazard-bar"></div>
 <div class="rec-header">
   <div class="rec-header-inner">
@@ -450,8 +456,15 @@
     `).join('');
   }
 
+  let ultimoSnapshotAtendimentos = '';
   async function inicializar(){
     atendimentos = await carregarAtendimentos();
+    const snapshot = JSON.stringify(atendimentos);
+    const eraPrimeiraCarga = ultimoSnapshotAtendimentos === '';
+    if(snapshot !== ultimoSnapshotAtendimentos){
+      ultimoSnapshotAtendimentos = snapshot;
+      if(!eraPrimeiraCarga) forcarVoltaPainel();
+    }
     renderLista();
   }
 
@@ -761,6 +774,70 @@
       </div>
     `).join('');
   }
+
+  // ===== Ciclo: espelha o mesmo site externo que alterna no Painel =====
+  let siteExternoUrl = '';
+  let duracaoPainelMs = 120000;
+  let duracaoExternoMs = 120000;
+  let modoExterno = false;
+  let timeoutCiclo = null;
+
+  function mostrarPainel(){
+    modoExterno = false;
+    const overlay = document.getElementById('site-externo-overlay');
+    overlay.classList.remove('visivel');
+    overlay.style.pointerEvents = 'none';
+    setTimeout(() => { if(!modoExterno) document.getElementById('site-externo-frame').src = 'about:blank'; }, 850);
+  }
+
+  function mostrarSiteExterno(){
+    if(!siteExternoUrl) return;
+    modoExterno = true;
+    document.getElementById('site-externo-frame').src = siteExternoUrl;
+    const overlay = document.getElementById('site-externo-overlay');
+    overlay.style.pointerEvents = 'auto';
+    requestAnimationFrame(() => overlay.classList.add('visivel'));
+  }
+
+  function agendarProximaTroca(){
+    clearTimeout(timeoutCiclo);
+    const espera = modoExterno ? duracaoExternoMs : duracaoPainelMs;
+    timeoutCiclo = setTimeout(() => {
+      if(modoExterno){ mostrarPainel(); } else { mostrarSiteExterno(); }
+      agendarProximaTroca();
+    }, espera);
+  }
+
+  function forcarVoltaPainel(){
+    if(!modoExterno) return;
+    mostrarPainel();
+    agendarProximaTroca();
+  }
+
+  async function sincronizarConfigCiclo(){
+    try{
+      const res = await fetch(`${API_URL}?action=obterConfig`);
+      const config = await res.json();
+      const novoUrl = (config.site_externo_url || '').trim();
+      const novaDuracaoPainel = Math.max(5, parseInt(config.duracao_painel_segundos, 10) || 120) * 1000;
+      const novaDuracaoExterno = Math.max(5, parseInt(config.duracao_externo_segundos, 10) || 120) * 1000;
+
+      const mudouUrl = novoUrl !== siteExternoUrl;
+      const mudouDuracao = novaDuracaoPainel !== duracaoPainelMs || novaDuracaoExterno !== duracaoExternoMs;
+
+      siteExternoUrl = novoUrl;
+      duracaoPainelMs = novaDuracaoPainel;
+      duracaoExternoMs = novaDuracaoExterno;
+
+      if(mudouUrl && !siteExternoUrl && modoExterno) mostrarPainel();
+      if(mudouUrl || mudouDuracao) agendarProximaTroca();
+    }catch(e){
+      console.error('Erro ao carregar config:', e);
+    }
+  }
+  sincronizarConfigCiclo();
+  setInterval(sincronizarConfigCiclo, 15000);
+  agendarProximaTroca();
 
   // Atualiza a lista periodicamente (caso outra pessoa cadastre em outro computador)
   setInterval(inicializar, 5000);
