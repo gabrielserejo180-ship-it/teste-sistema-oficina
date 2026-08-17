@@ -57,6 +57,7 @@
 
   .painel-top{ display:flex; justify-content:space-between; align-items:center; padding:26px 42px 18px; flex-shrink:0; position:relative; z-index:1; }
   .painel-brand{ display:flex; align-items:center; gap:14px; }
+  #site-externo-overlay.visivel{ opacity:1; }
   .painel-brand svg{ width:38px; height:38px; color:var(--brand); }
   .brand-logo{
     width:42px; height:42px; object-fit:contain; border-radius:6px;
@@ -229,7 +230,7 @@
   <div class="hazard-bar"></div>
 
   <!-- Alterna com a tela normal a cada 2 minutos, mostrando um site externo em tela cheia -->
-  <div id="site-externo-overlay" style="position:fixed; inset:0; z-index:50; display:none; background:#000;">
+  <div id="site-externo-overlay" style="position:fixed; inset:0; z-index:50; background:#000; opacity:0; pointer-events:none; transition:opacity .8s ease;">
     <iframe id="site-externo-frame" style="width:100%; height:100%; border:none;"></iframe>
   </div>
 
@@ -580,39 +581,46 @@
     if(videoPlaylist.length === 0) tocarProximoItem();
   }
 
-  // ===== Ciclo: alterna com um site externo a cada 2 minutos =====
-  const CICLO_DURACAO_MS = 120000; // 2 minutos
+  // ===== Ciclo: alterna com um site externo, com fade suave e duração configurável =====
   let siteExternoUrl = '';
+  let duracaoPainelMs = 120000;  // padrão: 2 minutos
+  let duracaoExternoMs = 120000; // padrão: 2 minutos
   let modoExterno = false;
   let timeoutCiclo = null;
 
   function mostrarPainel(){
     modoExterno = false;
-    document.getElementById('site-externo-overlay').style.display = 'none';
-    document.getElementById('site-externo-frame').src = 'about:blank';
+    const overlay = document.getElementById('site-externo-overlay');
+    overlay.classList.remove('visivel');
+    overlay.style.pointerEvents = 'none';
+    // Só limpa o iframe depois que o fade terminar, pra não "estourar" preto no meio da transição
+    setTimeout(() => { if(!modoExterno) document.getElementById('site-externo-frame').src = 'about:blank'; }, 850);
   }
 
   function mostrarSiteExterno(){
     if(!siteExternoUrl) return; // nada configurado, fica sempre no painel
     modoExterno = true;
     document.getElementById('site-externo-frame').src = siteExternoUrl;
-    document.getElementById('site-externo-overlay').style.display = 'block';
+    const overlay = document.getElementById('site-externo-overlay');
+    overlay.style.pointerEvents = 'auto';
+    requestAnimationFrame(() => overlay.classList.add('visivel'));
   }
 
-  function agendarProximaTroca(ms){
+  function agendarProximaTroca(){
     clearTimeout(timeoutCiclo);
+    const espera = modoExterno ? duracaoExternoMs : duracaoPainelMs;
     timeoutCiclo = setTimeout(() => {
       if(modoExterno){ mostrarPainel(); } else { mostrarSiteExterno(); }
-      agendarProximaTroca(CICLO_DURACAO_MS);
-    }, ms);
+      agendarProximaTroca();
+    }, espera);
   }
 
   // Chamado quando uma alteração de verdade chega enquanto o site externo está em tela:
-  // volta pro painel na hora e reinicia a contagem dos 2 minutos a partir de agora.
+  // volta pro painel na hora e reinicia a contagem a partir de agora.
   function forcarVoltaPainel(){
     if(!modoExterno) return;
     mostrarPainel();
-    agendarProximaTroca(CICLO_DURACAO_MS);
+    agendarProximaTroca();
   }
 
   async function sincronizarConfig(){
@@ -620,18 +628,25 @@
       const res = await fetch(`${API_URL}?action=obterConfig`);
       const config = await res.json();
       const novoUrl = (config.site_externo_url || '').trim();
-      if(novoUrl !== siteExternoUrl){
-        siteExternoUrl = novoUrl;
-        // Se desativaram o site externo enquanto ele estava em tela, volta pro painel
-        if(!siteExternoUrl && modoExterno) mostrarPainel();
-      }
+      const novaDuracaoPainel = Math.max(5, parseInt(config.duracao_painel_segundos, 10) || 120) * 1000;
+      const novaDuracaoExterno = Math.max(5, parseInt(config.duracao_externo_segundos, 10) || 120) * 1000;
+
+      const mudouUrl = novoUrl !== siteExternoUrl;
+      const mudouDuracao = novaDuracaoPainel !== duracaoPainelMs || novaDuracaoExterno !== duracaoExternoMs;
+
+      siteExternoUrl = novoUrl;
+      duracaoPainelMs = novaDuracaoPainel;
+      duracaoExternoMs = novaDuracaoExterno;
+
+      if(mudouUrl && !siteExternoUrl && modoExterno) mostrarPainel();
+      if(mudouUrl || mudouDuracao) agendarProximaTroca(); // aplica a mudança já na próxima troca
     }catch(e){
       console.error('Erro ao carregar config:', e);
     }
   }
   sincronizarConfig();
   setInterval(sincronizarConfig, 15000);
-  agendarProximaTroca(CICLO_DURACAO_MS);
+  agendarProximaTroca();
 
   sincronizarVideos();
   // Verifica se a lista mudou a cada 20s (não precisa ser tão frequente quanto a fila)
