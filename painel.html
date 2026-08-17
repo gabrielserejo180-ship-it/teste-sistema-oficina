@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel — Oficina</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Bebas+Neue&family=IBM+Plex+Mono:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --asphalt:#0B0C0F;
+    --asphalt-2:#111318;
+    --gunmetal:#1D2027;
+    --gunmetal-2:#262A33;
+    --chrome:#AEB4BD;
+    --hairline:rgba(255,255,255,0.08);
+
+    --brand:#E4002B;
+    --brand-glow:#FF3B54;
+    --brand-dim:#7A0016;
+    --blue:#2F8FE0;
+    --green:#2FBE7F;
+    --amber:#E0A82E;
+
+    --shadow-lg:0 20px 44px rgba(0,0,0,0.45), 0 2px 0 rgba(255,255,255,0.04) inset;
+    --shadow-sm:0 8px 18px rgba(0,0,0,0.35);
+  }
+  *{box-sizing:border-box;}
+  body{ margin:0; font-family:'Inter',sans-serif; }
+
+  .hazard-bar{
+    height:9px;
+    background:repeating-linear-gradient(45deg, var(--brand) 0 16px, var(--asphalt) 16px 32px);
+    background-size:200% 100%; animation:stripeMove 3s linear infinite;
+  }
+  @keyframes stripeMove{ from{background-position:0 0;} to{background-position:-64px 0;} }
+
+  #painel{
+    display:flex; flex-direction:column; min-height:100vh;
+    background:
+      radial-gradient(circle at 12% 6%, rgba(228,0,43,0.10), transparent 38%),
+      radial-gradient(circle at 88% 92%, rgba(47,143,224,0.05), transparent 42%),
+      var(--asphalt);
+    color:#F2F0EC; overflow:hidden; position:relative;
+  }
+  /* Assinatura visual: círculo da Alvorada girando em 3D, centralizado no fundo */
+  #painel::before{
+    content:''; position:fixed; top:50%; left:50%; width:560px; height:560px; pointer-events:none; z-index:0;
+    background:url('circulo-alvorada.png') center/contain no-repeat;
+    opacity:0.16;
+    animation:anelSpin3d 9s linear infinite;
+  }
+  @keyframes anelSpin3d{
+    from{ transform:translate(-50%,-50%) rotateY(0deg) rotateX(8deg); }
+    to{ transform:translate(-50%,-50%) rotateY(360deg) rotateX(8deg); }
+  }
+
+  .painel-top{ display:flex; justify-content:space-between; align-items:center; padding:26px 42px 18px; flex-shrink:0; position:relative; z-index:1; }
+  .painel-brand{ display:flex; align-items:center; gap:14px; }
+  .painel-brand svg{ width:38px; height:38px; color:var(--brand); }
+  .brand-logo{
+    width:42px; height:42px; object-fit:contain; border-radius:6px;
+    animation:logoPulse 2.4s ease-in-out infinite;
+  }
+  @keyframes logoPulse{
+    0%,100%{ opacity:1; transform:scale(1); }
+    50%{ opacity:0.35; transform:scale(0.94); }
+  }
+  .painel-title{
+    font-family:'Oswald',sans-serif; font-weight:700; font-size:26px; letter-spacing:0.03em;
+    margin:0; text-transform:uppercase; color:#fff;
+  }
+  .painel-title span{ color:var(--brand); }
+  .clock{ font-family:'IBM Plex Mono',monospace; font-size:18px; color:var(--chrome); letter-spacing:0.03em; }
+  .clock-big{
+    font-family:'IBM Plex Mono',monospace; font-size:56px; font-weight:700; color:#fff;
+    letter-spacing:0.06em; text-align:center; margin-top:18px; padding:16px 0;
+    background:linear-gradient(180deg, var(--gunmetal-2), var(--gunmetal));
+    border:1px solid var(--hairline); border-radius:12px; box-shadow:var(--shadow-sm), 0 0 0 1px rgba(228,0,43,0.08);
+    position:relative; z-index:1;
+  }
+
+  .painel-body{
+    display:grid; grid-template-columns:1fr 1.3fr; gap:20px;
+    padding:0 42px 20px; flex:1; min-height:0; position:relative; z-index:1;
+  }
+  .video-panel{
+    background:#000; border-radius:16px; overflow:hidden; position:relative;
+    box-shadow:var(--shadow-lg); border:1px solid var(--hairline);
+  }
+  .video-panel video{ width:100%; height:100%; object-fit:cover; display:block; opacity:0; transition:opacity .5s ease; }
+  .video-panel img{
+    width:100%; height:100%; object-fit:cover; display:block; opacity:0; transition:opacity .5s ease;
+    position:absolute; top:0; left:0;
+  }
+  .video-panel .video-label{
+    position:absolute; top:14px; left:14px; font-family:'IBM Plex Mono',monospace; font-size:11px;
+    letter-spacing:0.1em; text-transform:uppercase; color:#D8DBE0;
+    background:rgba(0,0,0,0.55); padding:5px 11px; border-radius:5px;
+  }
+  .sound-btn{
+    position:absolute; top:12px; right:12px; width:34px; height:34px;
+    display:flex; align-items:center; justify-content:center;
+    background:rgba(0,0,0,0.55); border:none; border-radius:6px; color:#D8DBE0; cursor:pointer;
+    transition:background .2s ease, color .2s ease;
+  }
+  .sound-btn:hover{ background:rgba(0,0,0,0.75); color:#fff; }
+  .sound-btn.unmuted{ background:var(--brand); color:#fff; }
+  .sound-btn svg{ width:17px; height:17px; }
+  .queue-col{ overflow-y:auto; padding-right:6px; }
+  .queue-col-title{
+    font-family:'Oswald',sans-serif; font-size:13px; font-weight:600; letter-spacing:0.06em;
+    text-transform:uppercase; color:var(--chrome); margin:0 0 12px;
+  }
+
+  .painel-banner{
+    flex-shrink:0; background:#0F1013; border-top:3px solid var(--brand); padding:14px 20px; text-align:center;
+  }
+  .painel-banner span{
+    font-family:'Oswald',sans-serif; font-weight:700; font-size:19px; letter-spacing:0.03em;
+    text-transform:uppercase; color:#FFD166;
+  }
+
+  .destaque-grid{ display:grid; grid-template-columns:1fr; gap:10px; }
+
+  .ticker-wrap{
+    overflow:hidden; position:relative; border-radius:12px;
+    background:linear-gradient(180deg, var(--gunmetal-2), var(--gunmetal));
+    border:1px solid var(--hairline); box-shadow:var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,0.04);
+    padding:32px 0;
+    mask-image:linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+    -webkit-mask-image:linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+  }
+  .ticker-track{
+    display:flex; width:max-content; will-change:transform;
+    animation:tickerScroll 20s linear infinite;
+  }
+  .ticker-item{
+    display:flex; align-items:center; gap:20px; white-space:nowrap;
+    padding:0 46px; border-right:1px solid rgba(255,255,255,0.14);
+  }
+  .ticker-item .senha{
+    font-family:'IBM Plex Mono',monospace; font-size:28px; font-weight:700; color:var(--brand);
+  }
+  .ticker-item .nome{
+    font-family:'Oswald',sans-serif; font-size:58px; font-weight:700; color:#fff; letter-spacing:0.01em;
+  }
+  .ticker-item .placa-label{
+    font-family:'Oswald',sans-serif; font-size:20px; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; color:#7A7F87;
+  }
+  .ticker-item .placa{
+    font-family:'IBM Plex Mono',monospace; font-size:26px; font-weight:600; color:#B7BDC6;
+    background:rgba(255,255,255,0.08); border-radius:5px; padding:5px 12px;
+  }
+  .ticker-item .status-dot{
+    width:16px; height:16px; border-radius:50%; flex-shrink:0;
+  }
+  .ticker-item .status-dot.aguardando{ background:var(--brand); }
+  .ticker-item .status-dot.verificando{ background:var(--amber); }
+  .ticker-item .status-dot.atendimento{ background:var(--blue); }
+  @keyframes tickerScroll{ from{ transform:translateX(0); } to{ transform:translateX(-50%); } }
+  .ticket-card{
+    border-radius:12px; overflow:hidden; position:relative; animation:cardIn .55s cubic-bezier(.2,.8,.2,1) both;
+    box-shadow:var(--shadow-sm); display:flex; align-items:stretch; min-height:64px;
+    border:1px solid rgba(255,255,255,0.12);
+  }
+  .ticket-card::after{
+    content:''; position:absolute; top:0; left:0; right:0; height:2px;
+    background:linear-gradient(90deg, rgba(255,255,255,0.75), rgba(255,255,255,0));
+  }
+  .ticket-card.status-aguardando{ background:linear-gradient(160deg, var(--brand-glow), var(--brand) 55%, var(--brand-dim)); }
+  .ticket-card.status-verificando{ background:linear-gradient(160deg, #F2C25E, var(--amber) 60%, #A9761A); }
+  .ticket-card.status-atendimento{ background:linear-gradient(160deg, #63B0F2, var(--blue) 60%, #1C5C99); animation:cardIn .55s cubic-bezier(.2,.8,.2,1) both, pulseGlow 2.6s ease-in-out infinite; }
+  .ticket-card.status-concluido{ background:linear-gradient(160deg, #5CD9A3, var(--green) 60%, #178556); }
+
+  @keyframes cardIn{ from{ opacity:0; transform:translateY(16px) scale(.98); } to{ opacity:1; transform:translateY(0) scale(1); } }
+  @keyframes pulseGlow{
+    0%,100%{ box-shadow:0 6px 16px rgba(0,0,0,0.3), 0 0 0 rgba(47,143,224,0); }
+    50%{ box-shadow:0 6px 16px rgba(0,0,0,0.3), 0 0 20px rgba(47,143,224,0.4); }
+  }
+
+  .ticket-card-header{
+    background:rgba(0,0,0,0.32); padding:0 18px; display:flex; align-items:center; justify-content:center;
+    flex:0 0 34%; text-align:center;
+    font-family:'Oswald',sans-serif; font-size:14px; font-weight:600; letter-spacing:0.02em;
+    text-transform:uppercase; color:#fff; overflow:hidden; text-overflow:ellipsis;
+  }
+  .ticket-card-body{ display:flex; flex:1; }
+  .ticket-data{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:10px 8px; }
+  .ticket-data:first-child{ border-right:2px solid rgba(255,255,255,0.3); }
+  .ticket-label{
+    font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.08em; text-transform:uppercase;
+    color:rgba(255,255,255,0.85); margin-bottom:4px;
+  }
+  .ticket-value{ font-family:'Bebas Neue',sans-serif; font-size:26px; letter-spacing:0.03em; color:#fff; }
+  .ticket-value.small{ font-size:16px; text-transform:uppercase; font-family:'Oswald',sans-serif; font-weight:600; }
+
+  .painel-empty{
+    text-align:center; padding:100px 20px; color:#565B62; font-family:'Oswald',sans-serif;
+    font-size:20px; text-transform:uppercase; letter-spacing:0.06em;
+  }
+
+  .gs-credit{
+    position:fixed; bottom:8px; right:12px; z-index:5;
+    display:flex; align-items:center; gap:6px;
+    font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.03em;
+    color:rgba(255,255,255,0.35);
+  }
+  .gs-mark{
+    display:flex; align-items:center; justify-content:center;
+    width:16px; height:16px; border-radius:4px; flex-shrink:0;
+    background:linear-gradient(135deg, #C7CCD3, #6E7887);
+    color:#1E3A5F; font-family:'Oswald',sans-serif; font-weight:700; font-size:8px;
+  }
+
+  @media (max-width:900px){
+    .painel-body{ grid-template-columns:1fr; }
+    .video-panel{ min-height:220px; }
+  }
+  @media (max-width:720px){
+    .painel-top{ flex-direction:column; align-items:flex-start; gap:10px; }
+  }
+</style>
+</head>
+<body>
+
+
+<div id="painel">
+  <div class="hazard-bar"></div>
+
+  <!-- Alterna com a tela normal a cada 2 minutos, mostrando um site externo em tela cheia -->
+  <div id="site-externo-overlay" style="position:fixed; inset:0; z-index:50; display:none; background:#000;">
+    <iframe id="site-externo-frame" style="width:100%; height:100%; border:none;"></iframe>
+  </div>
+
+  <div class="painel-top">
+    <div class="painel-brand">
+      <img src="logo.png" alt="Alvorada Motos" class="brand-logo">
+      <!-- NOME DA EMPRESA: troque "Oficina" pelo nome real -->
+      <h1 class="painel-title">Acompanhamento <span>·</span> Oficina</h1>
+    </div>
+    <div class="clock" id="relogio">--:--:--</div>
+  </div>
+  <div class="painel-body">
+    <div class="video-panel">
+      <video id="ad-video" muted autoplay playsinline></video>
+      <img id="ad-image" alt="Propaganda">
+      <div class="video-label">Propaganda</div>
+      <button class="sound-btn" id="sound-btn" onclick="alternarSom()" title="Ativar som (vídeo e chamadas por voz)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="4 9 9 9 13 5 13 19 9 15 4 15 4 9"/>
+          <line x1="16.5" y1="8" x2="21.5" y2="16" stroke-linecap="round"/>
+          <line x1="21.5" y1="8" x2="16.5" y2="16" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+    <div class="queue-col">
+      <p class="queue-col-title">Destaques</p>
+      <div class="destaque-grid" id="destaque-grid"></div>
+
+      <p class="queue-col-title" style="margin-top:20px;">Fila de espera</p>
+      <div class="ticker-wrap">
+        <div class="ticker-track" id="ticker-track"></div>
+      </div>
+
+      <div class="clock-big" id="relogio-grande">--:--:--</div>
+    </div>
+  </div>
+  <div class="painel-banner"><span id="banner-text">SEJA BEM-VINDO! ACOMPANHE SEU ATENDIMENTO</span></div>
+  <div class="gs-credit">
+    <span class="gs-mark">GS</span>
+    <span>GS Tech Solutions</span>
+  </div>
+</div>
+
+<script>
+  // Cole aqui a MESMA URL do Apps Script usada no recepcao.html
+  const API_URL = 'https://script.google.com/macros/s/AKfycbzJp1r7KyZd5M-XgV1ahrsB_RS9bfoKAwzAlCbGu4Bv7ncDDsNcomh8ybaHYc6LvBNh/exec';
+
+  const statusLabels = {
+    aguardando: "Aguardando atendimento",
+    verificando: "Verificando moto",
+    atendimento: "Em atendimento",
+    concluido: "Concluído"
+  };
+
+  async function carregarAtendimentos(){
+    try{
+      const res = await fetch(`${API_URL}?action=listar`);
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
+    }catch(e){
+      console.error('Erro ao carregar atendimentos:', e);
+      return [];
+    }
+  }
+
+  // ===== Chamada por voz (nome, placa, senha e status) =====
+  let vozPt = null;
+  let vozDesbloqueada = false;
+
+  function carregarVozPt(){
+    if(!window.speechSynthesis) return;
+    const vozes = speechSynthesis.getVoices();
+    vozPt = vozes.find(v => v.lang && v.lang.toLowerCase().startsWith('pt')) || vozes[0] || null;
+  }
+  if(window.speechSynthesis){
+    carregarVozPt();
+    speechSynthesis.onvoiceschanged = carregarVozPt;
+  }
+
+  function desbloquearVoz(){
+    if(vozDesbloqueada || !window.speechSynthesis) return;
+    vozDesbloqueada = true;
+    const teste = new SpeechSynthesisUtterance(' ');
+    teste.volume = 0;
+    speechSynthesis.speak(teste);
+  }
+
+  const fraseStatus = {
+    aguardando: 'Aguardando atendimento.',
+    verificando: 'Sua moto está sendo verificada.',
+    atendimento: 'Sua moto está em atendimento.',
+    concluido: 'Sua moto está pronta! Por favor, dirija-se à recepção.'
+  };
+
+  const jaAnunciados = new Set();
+
+  function anunciarPorVoz(a){
+    if(!window.speechSynthesis || !vozDesbloqueada) return;
+    const texto = `${a.nome}, placa ${a.placa}. Senha ${a.senha}. ${fraseStatus[a.status] || ''}`;
+    const utter = new SpeechSynthesisUtterance(texto);
+    utter.lang = 'pt-BR';
+    if(vozPt) utter.voice = vozPt;
+    utter.rate = 0.95;
+
+    // Abaixa o volume da propaganda enquanto a voz fala, e volta ao normal depois
+    const volumeNormal = adVideo.volume;
+    const volumeAbaixado = 0.15;
+    utter.onstart = () => { adVideo.volume = volumeAbaixado; };
+    utter.onend = () => { adVideo.volume = volumeNormal; };
+    utter.onerror = () => { adVideo.volume = volumeNormal; };
+
+    speechSynthesis.speak(utter);
+  }
+
+  const DESTAQUE_DURACAO_MS = 60000; // 1 minuto
+  let ultimoSnapshot = '';
+  let ultimoSnapshotDestaques = '';
+  let atendimentosAtuais = [];
+
+  async function renderPainel(){
+    const atendimentos = await carregarAtendimentos();
+    atendimentosAtuais = atendimentos;
+    const snapshot = JSON.stringify(atendimentos);
+
+    // Se nada mudou desde a última checagem, não mexe na fila (evita a piscada)
+    if(snapshot !== ultimoSnapshot){
+      const eraPrimeiraCarga = ultimoSnapshot === '';
+      ultimoSnapshot = snapshot;
+      const fila = atendimentos.filter(a => a.status !== 'concluido');
+      renderTicker(fila);
+      // Houve uma alteração de verdade: se o site externo estiver em tela, volta pro painel na hora
+      if(!eraPrimeiraCarga) forcarVoltaPainel();
+    }
+
+    atualizarDestaques();
+  }
+
+  // Destaques: qualquer atendimento com alteração nos últimos 60s (criado, mudou status, etc.)
+  // Roda numa checagem própria pra sumir sozinho quando o minuto passa, mesmo sem novo dado do servidor.
+  function atualizarDestaques(){
+    const agora = Date.now();
+    const destaques = atendimentosAtuais
+      .filter(a => a.atualizado && (agora - new Date(a.atualizado).getTime()) < DESTAQUE_DURACAO_MS)
+      .sort((a, b) => new Date(b.atualizado) - new Date(a.atualizado))
+      .slice(0, 5);
+
+    // Anuncia por voz qualquer novidade que ainda não foi falada
+    destaques.forEach(a => {
+      const chave = `${a.senha}-${a.atualizado}`;
+      if(!jaAnunciados.has(chave)){
+        jaAnunciados.add(chave);
+        anunciarPorVoz(a);
+      }
+    });
+
+    const snap = JSON.stringify(destaques);
+    if(snap === ultimoSnapshotDestaques) return;
+    ultimoSnapshotDestaques = snap;
+    renderDestaques(destaques);
+  }
+  setInterval(atualizarDestaques, 3000);
+
+  function renderDestaques(destaques){
+    const grid = document.getElementById('destaque-grid');
+
+    if(destaques.length === 0){
+      grid.innerHTML = '<div class="painel-empty" style="padding:22px; font-size:14px;">Nenhuma atualização recente</div>';
+      return;
+    }
+
+    grid.innerHTML = destaques.map(a => `
+      <div class="ticket-card status-${a.status}">
+        <div class="ticket-card-header">${a.nome}</div>
+        <div class="ticket-card-body">
+          <div class="ticket-data">
+            <div class="ticket-label">Senha</div>
+            <div class="ticket-value">${a.senha}</div>
+          </div>
+          <div class="ticket-data">
+            <div class="ticket-label">${a.placa}</div>
+            <div class="ticket-value small">${statusLabels[a.status]}</div>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function renderTicker(fila){
+    const track = document.getElementById('ticker-track');
+
+    if(fila.length === 0){
+      track.style.animation = 'none';
+      track.innerHTML = '<div class="ticker-item"><span class="nome">Nenhum cliente aguardando no momento</span></div>';
+      return;
+    }
+
+    const itemHtml = a => `
+      <div class="ticker-item">
+        <span class="status-dot ${a.status}"></span>
+        <span class="senha">#${a.senha}</span>
+        <span class="nome">${a.nome}</span>
+        <span class="placa-label">Placa</span>
+        <span class="placa">${a.placa}</span>
+      </div>
+    `;
+
+    // Duplica a lista pra o loop ficar contínuo (sem "pulo" perceptível)
+    track.innerHTML = fila.map(itemHtml).join('') + fila.map(itemHtml).join('');
+
+    const duracao = Math.max(fila.length * 5, 14);
+    track.style.animation = `tickerScroll ${duracao}s linear infinite`;
+  }
+
+  // Busca dados novos a cada 4 segundos (o painel não precisa de tempo real perfeito)
+  setInterval(renderPainel, 4000);
+  renderPainel();
+
+  function formatHora(date){
+    return date.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+  }
+  function atualizarRelogio(){
+    const hora = formatHora(new Date());
+    document.getElementById('relogio').textContent = hora;
+    const relogioGrande = document.getElementById('relogio-grande');
+    if(relogioGrande) relogioGrande.textContent = hora;
+  }
+  setInterval(atualizarRelogio, 1000);
+  atualizarRelogio();
+
+  // ===== Vídeos e imagens de propaganda em loop (cadastrados na tela de Recepção) =====
+  let videoPlaylist = [];
+  let itemIndex = 0;
+  let timerItemAtual = null;
+  const adVideo = document.getElementById('ad-video');
+  const adImage = document.getElementById('ad-image');
+
+  function alternarSom(){
+    adVideo.muted = !adVideo.muted;
+    adVideo.volume = 1;
+    const btn = document.getElementById('sound-btn');
+    btn.classList.toggle('unmuted', !adVideo.muted);
+    btn.title = adVideo.muted ? 'Ativar som' : 'Silenciar';
+    desbloquearVoz();
+  }
+
+  function tocarProximoItem(){
+    if(timerItemAtual){ clearTimeout(timerItemAtual); timerItemAtual = null; }
+
+    const label = document.querySelector('.video-label');
+    const somBtn = document.getElementById('sound-btn');
+
+    if(videoPlaylist.length === 0){
+      adVideo.style.opacity = 0;
+      adImage.style.opacity = 0;
+      adVideo.removeAttribute('src');
+      adImage.removeAttribute('src');
+      if(label) label.textContent = 'Nenhum item cadastrado';
+      return;
+    }
+
+    const item = videoPlaylist[itemIndex];
+    // Escolhe o próximo aleatoriamente, evitando repetir o mesmo item em seguida
+    if(videoPlaylist.length > 1){
+      let proximoIndex;
+      do{ proximoIndex = Math.floor(Math.random() * videoPlaylist.length); } while(proximoIndex === itemIndex);
+      itemIndex = proximoIndex;
+    } else {
+      itemIndex = 0;
+    }
+
+    if(item.tipo === 'imagem'){
+      if(label) label.textContent = 'Propaganda';
+      adVideo.style.opacity = 0;
+      adVideo.pause();
+      if(somBtn) somBtn.style.display = 'none';
+
+      setTimeout(() => {
+        adImage.onload = () => { adImage.style.opacity = 1; };
+        adImage.src = item.url;
+        const duracaoMs = (parseInt(item.duracao, 10) || 40) * 1000;
+        timerItemAtual = setTimeout(tocarProximoItem, duracaoMs);
+      }, 500);
+      return;
+    }
+
+    // item de vídeo
+    if(label) label.textContent = 'Propaganda';
+    adImage.style.opacity = 0;
+    adVideo.style.opacity = 0;
+    if(somBtn) somBtn.style.display = 'flex';
+
+    const proximo = item.url;
+
+    setTimeout(() => {
+      const mostrar = () => {
+        adVideo.style.opacity = 1;
+        adVideo.play().catch(() => {});
+      };
+
+      // Se for a mesma fonte de antes (ex: deu a volta no loop), o navegador não
+      // dispara 'loadeddata' de novo — nesse caso só reinicia e toca direto.
+      if(adVideo.currentSrc && adVideo.currentSrc.indexOf(proximo) !== -1){
+        adVideo.currentTime = 0;
+        mostrar();
+        return;
+      }
+
+      const aoCarregar = () => {
+        mostrar();
+        adVideo.removeEventListener('loadeddata', aoCarregar);
+      };
+      adVideo.addEventListener('loadeddata', aoCarregar);
+      adVideo.src = proximo;
+
+      // Segurança: se por algum motivo 'loadeddata' não disparar em 4s, toca assim mesmo.
+      setTimeout(() => {
+        if(adVideo.style.opacity !== '1'){
+          adVideo.removeEventListener('loadeddata', aoCarregar);
+          mostrar();
+        }
+      }, 4000);
+    }, 500);
+  }
+  adVideo.addEventListener('ended', tocarProximoItem);
+
+  async function carregarVideos(){
+    try{
+      const res = await fetch(`${API_URL}?action=listarVideos`);
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
+    }catch(e){
+      console.error('Erro ao carregar itens:', e);
+      return [];
+    }
+  }
+
+  let ultimoSnapshotVideos = '';
+  async function sincronizarVideos(){
+    const videos = await carregarVideos();
+    const snapshot = JSON.stringify(videos);
+    if(snapshot === ultimoSnapshotVideos) return;
+    ultimoSnapshotVideos = snapshot;
+
+    const estavaVazia = videoPlaylist.length === 0;
+    videoPlaylist = videos;
+    itemIndex = 0;
+    if(estavaVazia && videoPlaylist.length > 0) tocarProximoItem();
+    if(videoPlaylist.length === 0) tocarProximoItem();
+  }
+
+  // ===== Ciclo: alterna com um site externo a cada 2 minutos =====
+  const CICLO_DURACAO_MS = 120000; // 2 minutos
+  let siteExternoUrl = '';
+  let modoExterno = false;
+  let timeoutCiclo = null;
+
+  function mostrarPainel(){
+    modoExterno = false;
+    document.getElementById('site-externo-overlay').style.display = 'none';
+    document.getElementById('site-externo-frame').src = 'about:blank';
+  }
+
+  function mostrarSiteExterno(){
+    if(!siteExternoUrl) return; // nada configurado, fica sempre no painel
+    modoExterno = true;
+    document.getElementById('site-externo-frame').src = siteExternoUrl;
+    document.getElementById('site-externo-overlay').style.display = 'block';
+  }
+
+  function agendarProximaTroca(ms){
+    clearTimeout(timeoutCiclo);
+    timeoutCiclo = setTimeout(() => {
+      if(modoExterno){ mostrarPainel(); } else { mostrarSiteExterno(); }
+      agendarProximaTroca(CICLO_DURACAO_MS);
+    }, ms);
+  }
+
+  // Chamado quando uma alteração de verdade chega enquanto o site externo está em tela:
+  // volta pro painel na hora e reinicia a contagem dos 2 minutos a partir de agora.
+  function forcarVoltaPainel(){
+    if(!modoExterno) return;
+    mostrarPainel();
+    agendarProximaTroca(CICLO_DURACAO_MS);
+  }
+
+  async function sincronizarConfig(){
+    try{
+      const res = await fetch(`${API_URL}?action=obterConfig`);
+      const config = await res.json();
+      const novoUrl = (config.site_externo_url || '').trim();
+      if(novoUrl !== siteExternoUrl){
+        siteExternoUrl = novoUrl;
+        // Se desativaram o site externo enquanto ele estava em tela, volta pro painel
+        if(!siteExternoUrl && modoExterno) mostrarPainel();
+      }
+    }catch(e){
+      console.error('Erro ao carregar config:', e);
+    }
+  }
+  sincronizarConfig();
+  setInterval(sincronizarConfig, 15000);
+  agendarProximaTroca(CICLO_DURACAO_MS);
+
+  sincronizarVideos();
+  // Verifica se a lista mudou a cada 20s (não precisa ser tão frequente quanto a fila)
+  setInterval(sincronizarVideos, 20000);
+</script>
+
+</body>
+</html>

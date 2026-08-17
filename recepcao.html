@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recepção — Oficina</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Bebas+Neue&family=IBM+Plex+Mono:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#EDEAE4;
+    --paper-line:#D6D0C2;
+    --ink:#1C1D1F;
+    --ink-soft:#66605A;
+
+    --asphalt:#0B0C0F;
+    --asphalt-2:#111318;
+    --chrome:#AEB4BD;
+
+    --brand:#E4002B;
+    --brand-glow:#FF3B54;
+    --brand-dim:#7A0016;
+    --blue:#2F8FE0;
+    --green:#2FBE7F;
+    --amber:#E0A82E;
+
+    --shadow-card:0 1px 2px rgba(28,29,31,0.04), 0 14px 30px rgba(28,29,31,0.08);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; font-family:'Inter',sans-serif; color:var(--ink); min-height:100vh;
+    background:
+      radial-gradient(circle at 100% 0%, rgba(228,0,43,0.05), transparent 40%),
+      var(--paper);
+  }
+
+  .hazard-bar{
+    height:9px;
+    background:repeating-linear-gradient(45deg, var(--brand) 0 16px, var(--asphalt) 16px 32px);
+    background-size:200% 100%; animation:stripeMove 3s linear infinite;
+  }
+  @keyframes stripeMove{ from{background-position:0 0;} to{background-position:-64px 0;} }
+
+  .rec-header{ background:var(--asphalt); color:#fff; padding:36px 24px 26px; position:relative; overflow:hidden; }
+  .rec-header::before{
+    content:''; position:absolute; top:50%; left:50%; width:380px; height:380px; pointer-events:none;
+    background:url('circulo-alvorada.png') center/contain no-repeat;
+    opacity:0.16;
+    animation:anelSpin3d 9s linear infinite;
+  }
+  @keyframes anelSpin3d{
+    from{ transform:translate(-50%,-50%) rotateY(0deg) rotateX(8deg); }
+    to{ transform:translate(-50%,-50%) rotateY(360deg) rotateX(8deg); }
+  }
+  .rec-header-inner{ max-width:920px; margin:0 auto; display:flex; align-items:center; gap:16px; position:relative; z-index:1; }
+  .logo-mark{
+    width:46px; height:46px; flex-shrink:0; object-fit:contain; border-radius:7px;
+    animation:logoPulse 2.4s ease-in-out infinite;
+  }
+  @keyframes logoPulse{
+    0%,100%{ opacity:1; transform:scale(1); }
+    50%{ opacity:0.35; transform:scale(0.94); }
+  }
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.16em; text-transform:uppercase;
+    color:var(--chrome); margin:0 0 4px;
+  }
+  h1{ font-family:'Oswald',sans-serif; font-weight:700; font-size:30px; margin:0; letter-spacing:0.01em; text-transform:uppercase; }
+
+  .painel-link{
+    font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.04em;
+    color:var(--chrome); text-decoration:none; border:1px solid #3A3F49; border-radius:6px;
+    padding:8px 14px; transition:all .2s ease;
+  }
+  .painel-link:hover{ color:#fff; border-color:var(--brand); }
+
+  .settings-btn{
+    display:flex; align-items:center; justify-content:center;
+    width:36px; height:36px; border:1px solid #3A3F49; border-radius:6px;
+    background:transparent; color:var(--chrome); cursor:pointer; transition:all .2s ease;
+  }
+  .settings-btn:hover{ color:#fff; border-color:var(--brand); }
+  .settings-btn svg{ width:16px; height:16px; }
+
+  .settings-overlay{
+    display:none; position:fixed; inset:0; z-index:100;
+    background:rgba(10,11,13,0.72); align-items:center; justify-content:center; padding:20px;
+  }
+  .settings-overlay.active{ display:flex; }
+  .settings-modal{
+    background:var(--asphalt); color:#F2F0EC; width:100%; max-width:480px;
+    border-radius:12px; padding:26px 26px 22px; box-shadow:0 20px 50px rgba(0,0,0,0.5);
+    max-height:86vh; overflow-y:auto;
+  }
+  .settings-modal h3{
+    font-family:'Oswald',sans-serif; font-size:16px; text-transform:uppercase; letter-spacing:0.04em; margin:0 0 4px;
+  }
+  .settings-sub{ font-size:12.5px; color:#9AA0A9; margin:0 0 20px; line-height:1.5; }
+  .settings-section{ margin-bottom:20px; }
+  #video-list{ max-height:260px; overflow-y:auto; padding-right:4px; }
+  .settings-section label{
+    display:block; font-size:11px; font-weight:600; letter-spacing:0.05em; text-transform:uppercase;
+    color:#9AA0A9; margin-bottom:8px;
+  }
+  .url-row{ display:flex; gap:8px; }
+  .url-row input{
+    flex:1; font-family:'Inter',sans-serif; font-size:14px; padding:10px 11px;
+    border:1.5px solid #3A3F49; border-radius:6px; background:#1B1E24; color:#F2F0EC;
+  }
+  .url-row input:focus{ outline:none; border-color:var(--brand); }
+  .url-row button{
+    font-family:'Oswald',sans-serif; font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:0.04em;
+    background:var(--brand); color:#fff; border:none; border-radius:6px; padding:0 16px; cursor:pointer;
+  }
+  .video-item{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    background:#1B1E24; border:1px solid #2C303A; border-radius:6px; padding:9px 12px; margin-bottom:7px; font-size:13px;
+  }
+  .video-item span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .video-item button{
+    background:none; border:none; color:#C2544A; font-size:12px; font-family:'IBM Plex Mono',monospace;
+    cursor:pointer; text-decoration:underline; flex-shrink:0;
+  }
+  .settings-close{
+    width:100%; margin-top:6px; font-family:'Oswald',sans-serif; font-size:13px; font-weight:600;
+    letter-spacing:0.04em; text-transform:uppercase; background:#2C303A; color:#F2F0EC;
+    border:none; border-radius:6px; padding:11px; cursor:pointer;
+  }
+  .settings-close:hover{ background:#363B47; }
+  .empty-note-dark{ padding:16px; text-align:center; color:#9AA0A9; font-size:13px; border:1.5px dashed #3A3F49; border-radius:9px; }
+
+  .rec-body{ max-width:920px; margin:0 auto; padding:36px 24px 80px; }
+
+  .card{
+    background:#fff; border:1px solid var(--paper-line); border-radius:14px;
+    padding:30px; box-shadow:var(--shadow-card); position:relative; overflow:hidden;
+  }
+  .card::before{ content:''; position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg, var(--brand), var(--brand-glow)); }
+  .card-title{
+    font-family:'Oswald',sans-serif; font-size:14px; font-weight:600;
+    text-transform:uppercase; letter-spacing:0.05em; color:var(--ink-soft);
+    margin:0 0 20px; display:flex; align-items:center; gap:8px;
+  }
+  .card-title::before{ content:""; width:18px; height:3px; background:var(--brand); border-radius:2px; display:inline-block; }
+
+  .form-row{ display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-bottom:18px; }
+  .field{ display:flex; flex-direction:column; gap:6px; }
+  .field.full{ grid-column:1 / -1; }
+  label{ font-size:11px; font-weight:600; letter-spacing:0.05em; text-transform:uppercase; color:var(--ink-soft); }
+  input, select{
+    font-family:'Inter',sans-serif; font-size:15px; padding:12px 13px;
+    border:1.5px solid var(--paper-line); border-radius:7px; background:#FAF9F6; color:var(--ink);
+    transition:border-color .18s ease, box-shadow .18s ease;
+  }
+  input:focus, select:focus{ outline:none; border-color:var(--brand); box-shadow:0 0 0 3px rgba(228,0,43,0.14); background:#fff; }
+  input#placa{ font-family:'IBM Plex Mono',monospace; text-transform:uppercase; letter-spacing:0.1em; font-weight:600; }
+
+  .btn-primary{
+    font-family:'Oswald',sans-serif; font-size:14px; font-weight:600; letter-spacing:0.05em; text-transform:uppercase;
+    background:linear-gradient(180deg, var(--brand-glow), var(--brand)); color:#fff; border:none; padding:15px 26px; border-radius:8px; cursor:pointer;
+    transition:transform .15s ease, box-shadow .15s ease; box-shadow:0 3px 0 var(--brand-dim);
+  }
+  .btn-primary:hover{ transform:translateY(-2px); box-shadow:0 5px 0 var(--brand-dim); }
+  .btn-primary:active{ transform:translateY(1px); box-shadow:0 1px 0 var(--brand-dim); }
+
+  .list-header{ margin:38px 0 14px; display:flex; align-items:baseline; justify-content:space-between; }
+  .list-header h2{ font-family:'Oswald',sans-serif; font-size:16px; text-transform:uppercase; letter-spacing:0.05em; margin:0; }
+  .count-pill{ font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--ink-soft); }
+
+  .entry{
+    display:grid; grid-template-columns:64px 1fr 170px 90px; align-items:center; gap:14px;
+    padding:15px 18px; background:#fff; border:1px solid var(--paper-line); border-left:4px solid var(--paper-line);
+    border-radius:9px; margin-bottom:9px; animation:cardIn .4s ease both; transition:border-color .2s ease;
+  }
+  @keyframes cardIn{ from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:translateY(0); } }
+  .entry.status-aguardando{ border-left-color:var(--brand); }
+  .entry.status-verificando{ border-left-color:var(--amber); }
+  .entry.status-atendimento{ border-left-color:var(--blue); }
+  .entry.status-concluido{ border-left-color:var(--green); }
+
+  .senha-badge{ font-family:'Bebas Neue',sans-serif; font-size:22px; text-align:center; color:var(--ink); letter-spacing:0.02em; }
+  .entry-name{ font-weight:600; font-size:15px; }
+  .plate-chip{
+    display:inline-block; font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:600; letter-spacing:0.08em;
+    color:var(--ink); background:#F1EFE9; border:1px solid var(--paper-line); border-radius:5px; padding:3px 8px; margin-top:2px;
+  }
+  select.status-select{ font-size:13px; padding:9px 10px; }
+  .btn-remove{
+    background:none; border:none; color:#B0432F; font-size:12px; font-family:'IBM Plex Mono',monospace;
+    cursor:pointer; text-decoration:underline; text-align:right; transition:opacity .15s;
+  }
+  .btn-remove:hover{ opacity:0.65; }
+
+  .empty-note{ padding:24px; text-align:center; color:var(--ink-soft); font-size:14px; border:1.5px dashed var(--paper-line); border-radius:9px; }
+
+  .dev-credit{
+    display:flex; align-items:center; justify-content:center; gap:9px;
+    margin-top:46px; padding-top:20px; border-top:1px solid var(--paper-line);
+    font-size:12px; color:#9A958C;
+  }
+  .dev-credit strong{ color:#6B6659; font-weight:600; }
+  .gs-mark{
+    display:flex; align-items:center; justify-content:center;
+    width:22px; height:22px; border-radius:6px; flex-shrink:0;
+    background:linear-gradient(135deg, #C7CCD3, #8A93A0);
+    color:#1E3A5F; font-family:'Oswald',sans-serif; font-weight:700; font-size:10px; letter-spacing:0.02em;
+  }
+
+  @media (max-width:720px){
+    .form-row{ grid-template-columns:1fr; }
+    .entry{ grid-template-columns:1fr; gap:8px; text-align:left; }
+    .btn-remove{ text-align:left; }
+    .rec-header > div[style]{ position:static !important; margin-top:14px; }
+    .rec-header-inner{ flex-wrap:wrap; }
+  }
+</style>
+</head>
+<body>
+
+<div class="hazard-bar"></div>
+<div class="rec-header">
+  <div class="rec-header-inner">
+    <img src="logo.png" alt="Alvorada Motos" class="logo-mark">
+    <div>
+      <!-- NOME DA EMPRESA: troque "Recepção" e/ou adicione o nome real aqui -->
+      <p class="eyebrow">Recepção · Ordem de atendimento</p>
+      <h1>Cadastro de atendimento</h1>
+    </div>
+  </div>
+  <div style="position:absolute; top:36px; right:24px; display:flex; gap:8px; align-items:center;">
+    <button class="settings-btn" onclick="abrirAjustes()" title="Ajustes de vídeos e imagens do painel">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+      </svg>
+    </button>
+    <a class="painel-link" href="painel.html" target="_blank" rel="noopener">Abrir Painel ↗</a>
+  </div>
+</div>
+
+<div class="settings-overlay" id="settings-overlay">
+  <div class="settings-modal">
+    <h3>Ajustes — Vídeos e imagens do painel</h3>
+    <p class="settings-sub">Tocam em loop, um após o outro, na tela do Painel.</p>
+
+    <div class="settings-section">
+      <label>Tipo</label>
+      <select id="video-tipo-input" onchange="atualizarCampoDuracao()" style="width:100%; font-family:'Inter',sans-serif; font-size:14px; padding:11px 12px; border:1.5px solid #3A3F49; border-radius:6px; background:#1B1E24; color:#F2F0EC;">
+        <option value="video">Vídeo</option>
+        <option value="imagem">Imagem</option>
+      </select>
+    </div>
+
+    <div class="settings-section" id="duracao-wrap" style="display:none;">
+      <label>Duração da imagem na tela (segundos)</label>
+      <input type="number" id="video-duracao-input" value="40" min="3" step="1" style="width:100%; font-family:'Inter',sans-serif; font-size:14px; padding:11px 12px; border:1.5px solid #3A3F49; border-radius:6px; background:#1B1E24; color:#F2F0EC;">
+    </div>
+
+    <div class="settings-section">
+      <div style="display:flex; gap:8px; margin-bottom:14px;">
+        <button type="button" id="tab-link" onclick="mostrarAbaOrigem('link')" style="flex:1; font-family:'Oswald',sans-serif; font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; padding:9px; border-radius:6px; border:1.5px solid #3A3F49; background:var(--brand); color:#fff; cursor:pointer;">Por link</button>
+        <button type="button" id="tab-arquivo" onclick="mostrarAbaOrigem('arquivo')" style="flex:1; font-family:'Oswald',sans-serif; font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; padding:9px; border-radius:6px; border:1.5px solid #3A3F49; background:transparent; color:#B9BEC6; cursor:pointer;">Enviar arquivo</button>
+      </div>
+
+      <div id="origem-link">
+        <div class="url-row">
+          <input type="text" id="video-url-input" placeholder="Cole aqui o link (Google Drive, ou qualquer outro)">
+          <button onclick="adicionarVideoUrl()">Adicionar</button>
+        </div>
+        <p style="font-size:11.5px; color:#7A7F87; margin:8px 0 0;">Aceita link do Google Drive — pode organizar os vídeos/imagens numa pasta do Drive, e colar aqui o link de compartilhamento de cada arquivo (deixe como "Qualquer pessoa com o link"). O sistema ajusta o link sozinho.</p>
+      </div>
+
+      <div id="origem-arquivo" style="display:none;">
+        <div style="border:1.5px dashed #3A3F49; border-radius:8px; padding:16px; text-align:center;">
+          <input type="file" id="video-file-input" accept="video/*,image/*" multiple onchange="adicionarArquivos(this.files)" style="width:100%; font-size:12.5px; color:#B9BEC6;">
+        </div>
+        <p style="font-size:11.5px; color:#7A7F87; margin:8px 0 0;">Pode selecionar vários de uma vez (segure Ctrl/Cmd ou Shift na hora de escolher). <strong style="color:#B9BEC6;">Vídeos: envio direto até 100MB.</strong> Imagens: até 15MB.</p>
+        <p id="upload-status" style="font-size:12px; color:var(--brand); margin:6px 0 0;"></p>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <label id="video-list-label">Itens no loop</label>
+      <div id="video-list"></div>
+    </div>
+
+    <div class="settings-section" style="border-top:1px solid #3A3F49; padding-top:18px; margin-top:6px;">
+      <label>Site externo (alterna com o painel a cada 2 minutos)</label>
+      <div class="url-row">
+        <input type="text" id="site-externo-input" placeholder="Ex: https://www.honda.com.br">
+        <button onclick="salvarSiteExterno()">Salvar</button>
+      </div>
+      <p style="font-size:11.5px; color:#7A7F87; margin:8px 0 0;">A cada 2 minutos, o Painel mostra esse site em tela cheia por 2 minutos, depois volta pros dados de atendimento sozinho, em ciclo. Deixe em branco pra desativar. Se algum atendimento for atualizado enquanto o site estiver em tela, o Painel volta na hora pra mostrar a novidade.</p>
+      <p id="site-externo-status" style="font-size:12px; color:var(--brand); margin:6px 0 0;"></p>
+    </div>
+
+    <button class="settings-close" onclick="fecharAjustes()">Fechar</button>
+  </div>
+</div>
+
+<div class="rec-body">
+  <div class="card">
+    <p class="card-title">Novo atendimento</p>
+    <div class="form-row">
+      <div class="field">
+        <label for="nome">Nome do cliente</label>
+        <input type="text" id="nome" placeholder="Ex: João Silva">
+      </div>
+      <div class="field">
+        <label for="placa">Placa da moto</label>
+        <input type="text" id="placa" placeholder="ABC-1234" maxlength="8">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="field full">
+        <label for="status">Status inicial</label>
+        <select id="status">
+          <option value="aguardando">Aguardando atendimento</option>
+          <option value="verificando">Verificando moto</option>
+          <option value="atendimento">Em atendimento</option>
+          <option value="concluido">Concluído</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="cadastrarAtendimento()">Gerar senha e cadastrar</button>
+  </div>
+
+  <div class="list-header">
+    <h2>Atendimentos de hoje</h2>
+    <span class="count-pill" id="count-pill">0 registros</span>
+  </div>
+  <div id="lista-atendimentos"></div>
+
+  <div class="dev-credit">
+    <span class="gs-mark">GS</span>
+    <span>Sistema desenvolvido por <strong>GS Tech Solutions</strong></span>
+  </div>
+</div>
+
+<script>
+  // Cole aqui a URL do seu Web App do Apps Script (termina em /exec)
+  const API_URL = 'https://script.google.com/macros/s/AKfycbzJp1r7KyZd5M-XgV1ahrsB_RS9bfoKAwzAlCbGu4Bv7ncDDsNcomh8ybaHYc6LvBNh/exec';
+  // ImageKit: usado só pra hospedar vídeos. A assinatura de upload é gerada
+  // no Apps Script (chave privada fica lá, nunca aqui no código do site).
+  const IMAGEKIT_URL_ENDPOINT = 'https://ik.imagekit.io/lecekr0lx';
+
+  let atendimentos = [];
+  let videosAtuais = [];
+
+  async function carregarAtendimentos(){
+    try{
+      const res = await fetch(`${API_URL}?action=listar`);
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
+    }catch(e){
+      console.error('Erro ao carregar atendimentos:', e);
+      return [];
+    }
+  }
+
+  async function cadastrarAtendimento(){
+    const nome = document.getElementById('nome').value.trim();
+    const placa = document.getElementById('placa').value.trim().toUpperCase();
+    const status = document.getElementById('status').value;
+
+    if(!nome || !placa){
+      alert('Preencha nome e placa antes de cadastrar.');
+      return;
+    }
+
+    try{
+      await fetch(API_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        body: JSON.stringify({ action: 'criar', nome, placa, status })
+      });
+    }catch(e){
+      alert('Não foi possível salvar. Verifique sua conexão ou a URL da API.');
+      console.error(e);
+      return;
+    }
+
+    document.getElementById('nome').value = '';
+    document.getElementById('placa').value = '';
+    document.getElementById('status').value = 'aguardando';
+
+    atendimentos = await carregarAtendimentos();
+    renderLista();
+  }
+
+  async function atualizarStatus(senha, novoStatus){
+    try{
+      await fetch(API_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        body: JSON.stringify({ action: 'atualizarStatus', senha, status: novoStatus })
+      });
+    }catch(e){ console.error(e); }
+    atendimentos = await carregarAtendimentos();
+    renderLista();
+  }
+
+  async function removerAtendimento(senha){
+    try{
+      await fetch(API_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        body: JSON.stringify({ action: 'remover', senha })
+      });
+    }catch(e){ console.error(e); }
+    atendimentos = await carregarAtendimentos();
+    renderLista();
+  }
+
+  function renderLista(){
+    const container = document.getElementById('lista-atendimentos');
+    document.getElementById('count-pill').textContent =
+      atendimentos.length + (atendimentos.length === 1 ? ' registro' : ' registros');
+
+    if(atendimentos.length === 0){
+      container.innerHTML = '<div class="empty-note">Nenhum atendimento cadastrado ainda.</div>';
+      return;
+    }
+
+    container.innerHTML = atendimentos.slice().reverse().map(a => `
+      <div class="entry status-${a.status}">
+        <div class="senha-badge">#${a.senha}</div>
+        <div>
+          <div class="entry-name">${a.nome}</div>
+          <span class="plate-chip">${a.placa}</span>
+        </div>
+        <select class="status-select" onchange="atualizarStatus('${a.senha}', this.value)">
+          <option value="aguardando" ${a.status==='aguardando'?'selected':''}>Aguardando</option>
+          <option value="verificando" ${a.status==='verificando'?'selected':''}>Verificando moto</option>
+          <option value="atendimento" ${a.status==='atendimento'?'selected':''}>Em atendimento</option>
+          <option value="concluido" ${a.status==='concluido'?'selected':''}>Concluído</option>
+        </select>
+        <button class="btn-remove" onclick="removerAtendimento('${a.senha}')">Remover</button>
+      </div>
+    `).join('');
+  }
+
+  async function inicializar(){
+    atendimentos = await carregarAtendimentos();
+    renderLista();
+  }
+
+  // ===== Ajustes de vídeo (para o Painel) =====
+  async function carregarVideos(){
+    try{
+      const res = await fetch(`${API_URL}?action=listarVideos`);
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
+    }catch(e){
+      console.error('Erro ao carregar vídeos:', e);
+      return [];
+    }
+  }
+
+  async function abrirAjustes(){
+    document.getElementById('settings-overlay').classList.add('active');
+    atualizarCampoDuracao();
+    await renderVideoList();
+    await carregarSiteExterno();
+  }
+  function fecharAjustes(){
+    document.getElementById('settings-overlay').classList.remove('active');
+  }
+
+  async function carregarSiteExterno(){
+    try{
+      const res = await fetch(`${API_URL}?action=obterConfig`);
+      const config = await res.json();
+      document.getElementById('site-externo-input').value = config.site_externo_url || '';
+    }catch(e){
+      console.error('Erro ao carregar config:', e);
+    }
+  }
+
+  async function salvarSiteExterno(){
+    const status = document.getElementById('site-externo-status');
+    const valor = document.getElementById('site-externo-input').value.trim();
+    status.textContent = 'Salvando...';
+    try{
+      await fetch(API_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        body: JSON.stringify({ action: 'salvarConfig', chave: 'site_externo_url', valor })
+      });
+      status.textContent = valor ? 'Salvo! O painel já vai começar a alternar com esse site.' : 'Salvo — alternância desativada.';
+    }catch(e){
+      console.error(e);
+      status.textContent = 'Falha ao salvar, tenta de novo.';
+    }
+  }
+
+  function atualizarCampoDuracao(){
+    const tipo = document.getElementById('video-tipo-input').value;
+    document.getElementById('duracao-wrap').style.display = tipo === 'imagem' ? 'block' : 'none';
+  }
+
+  function mostrarAbaOrigem(aba){
+    const tabLink = document.getElementById('tab-link');
+    const tabArquivo = document.getElementById('tab-arquivo');
+    document.getElementById('origem-link').style.display = aba === 'link' ? 'block' : 'none';
+    document.getElementById('origem-arquivo').style.display = aba === 'arquivo' ? 'block' : 'none';
+    tabLink.style.background = aba === 'link' ? 'var(--brand)' : 'transparent';
+    tabLink.style.color = aba === 'link' ? '#fff' : '#B9BEC6';
+    tabArquivo.style.background = aba === 'arquivo' ? 'var(--brand)' : 'transparent';
+    tabArquivo.style.color = aba === 'arquivo' ? '#fff' : '#B9BEC6';
+  }
+
+  function pegarDuracao(){
+    const tipo = document.getElementById('video-tipo-input').value;
+    if(tipo !== 'imagem') return null;
+    const val = parseInt(document.getElementById('video-duracao-input').value, 10);
+    return (val && val > 0) ? val : 40;
+  }
+
+  function normalizarLinkDrive(url){
+    if(!url.includes('drive.google.com')) return url; // não é do Drive, mantém como está
+
+    // formato .../file/d/FILE_ID/view?...
+    let m = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+    if(m) return `https://drive.google.com/uc?export=view&id=${m[1]}`;
+
+    // formato .../open?id=FILE_ID ou .../uc?id=FILE_ID
+    m = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+    if(m) return `https://drive.google.com/uc?export=view&id=${m[1]}`;
+
+    return url; // link do Drive em formato não reconhecido, tenta usar como veio
+  }
+
+  function normalizarLinkGithub(url){
+    // Reconhece o link de visualização do GitHub (github.com/.../blob/...) e converte
+    // pro link "cru" (raw.githubusercontent.com), que é o que realmente toca o arquivo.
+    if(!url.includes('github.com') || !url.includes('/blob/')) return url;
+    return url
+      .replace('github.com', 'raw.githubusercontent.com')
+      .replace('/blob/', '/');
+  }
+
+  async function adicionarVideoUrl(){
+    const input = document.getElementById('video-url-input');
+    const tipo = document.getElementById('video-tipo-input').value;
+    const duracao = pegarDuracao();
+    const bruto = input.value.trim();
+    if(!bruto) return;
+    const val = normalizarLinkGithub(normalizarLinkDrive(bruto));
+    try{
+      await fetch(API_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        body: JSON.stringify({ action: 'adicionarVideo', url: val, label: bruto, tipo, duracao })
+      });
+    }catch(e){ console.error(e); }
+    input.value = '';
+    await renderVideoList();
+  }
+
+  function arquivoParaBase64(file){
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // Alguns navegadores/celulares não informam o "type" do arquivo (fica vazio),
+  // principalmente fotos vindas direto da galeria. Nesse caso, tenta descobrir pela extensão.
+  function inferirTipoEMime(file){
+    const mapaImagem = { jpg:'image/jpeg', jpeg:'image/jpeg', png:'image/png', gif:'image/gif', webp:'image/webp', heic:'image/heic', heif:'image/heif' };
+    const mapaVideo = { mp4:'video/mp4', mov:'video/quicktime', webm:'video/webm', avi:'video/x-msvideo', mkv:'video/x-matroska' };
+    let mime = file.type;
+    const ext = (file.name || '').toLowerCase().split('.').pop();
+    if(!mime) mime = mapaImagem[ext] || mapaVideo[ext] || 'application/octet-stream';
+    const tipo = mime.startsWith('image/') ? 'imagem' : 'video';
+    const heic = ext === 'heic' || ext === 'heif';
+    return { tipo, mime, heic };
+  }
+
+  // Vídeos vão direto pro ImageKit (o Drive não toca vídeo bem no painel).
+  // Antes de subir, pede uma autorização temporária ao Apps Script (a chave
+  // privada fica só lá — nunca fica exposta aqui no código do site).
+  async function enviarVideoCloudinary(file){
+    document.getElementById('video-tipo-input').value = 'video';
+    atualizarCampoDuracao();
+    const duracao = pegarDuracao();
+
+    const respAssinatura = await fetch(`${API_URL}?action=assinaturaImageKit`);
+    const auth = await respAssinatura.json();
+    if(!auth || !auth.signature) throw new Error('Não consegui gerar autorização de upload');
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('fileName', file.name);
+    formData.append('publicKey', auth.publicKey);
+    formData.append('signature', auth.signature);
+    formData.append('expire', auth.expire);
+    formData.append('token', auth.token);
+
+    const resp = await fetch('https://upload.imagekit.io/api/v1/files/upload', {
+      method: 'POST',
+      body: formData
+    });
+    const data = await resp.json();
+    if(!resp.ok || !data.url){
+      throw new Error((data && data.message) || 'Falha no upload pro ImageKit');
+    }
+
+    // Salva o link já pronto na planilha, do mesmo jeito que a aba "Por link" faz
+    await fetch(API_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      body: JSON.stringify({ action: 'adicionarVideo', url: data.url, label: file.name, tipo: 'video', duracao })
+    });
+  }
+
+  async function enviarUmArquivo(file){
+    const { tipo, mime } = inferirTipoEMime(file);
+    document.getElementById('video-tipo-input').value = tipo;
+    atualizarCampoDuracao();
+    const duracao = pegarDuracao();
+
+    const dados = await arquivoParaBase64(file);
+    await fetch(API_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      body: JSON.stringify({
+        action: 'uploadArquivo',
+        dados,
+        nomeArquivo: file.name,
+        mimeType: mime,
+        label: file.name,
+        tipo,
+        duracao
+      })
+    });
+  }
+
+  async function adicionarArquivos(fileList){
+    const arquivos = Array.from(fileList || []);
+    if(arquivos.length === 0) return;
+
+    const status = document.getElementById('upload-status');
+    const LIMITE_IMAGEM = 15 * 1024 * 1024;   // imagens continuam indo pro Drive
+    const LIMITE_VIDEO = 100 * 1024 * 1024;   // vídeos agora vão pro Cloudinary
+
+    const itens = arquivos.map(f => ({ file: f, ...inferirTipoEMime(f) }));
+
+    const grandes = itens.filter(i =>
+      (i.tipo === 'imagem' && i.file.size > LIMITE_IMAGEM) ||
+      (i.tipo === 'video' && i.file.size > LIMITE_VIDEO)
+    );
+    const validos = itens.filter(i => !grandes.includes(i));
+    const comHeic = validos.filter(i => /\.(heic|heif)$/i.test(i.file.name));
+
+    if(grandes.length > 0){
+      status.innerHTML = `${grandes.length} arquivo(s) muito grande(s) (${grandes.map(i => i.file.name).join(', ')}). ` +
+        `Imagens: até 15MB. Vídeos: até 100MB.`;
+    }
+
+    if(validos.length === 0) return;
+
+    if(comHeic.length > 0){
+      status.innerHTML = `Atenção: ${comHeic.length} foto(s) em formato HEIC (padrão do iPhone). ` +
+        `Esse formato costuma não abrir em navegadores/TV — se não aparecer no painel, converta pra JPG antes de enviar.`;
+      await new Promise(r => setTimeout(r, 2500));
+    }
+
+    // Conta quantos itens existem antes de enviar, pra confirmar de verdade se o envio funcionou
+    const antesDeEnviar = await carregarVideos();
+    const totalAntes = antesDeEnviar.length;
+
+    // Envia um de cada vez, pra não sobrecarregar o navegador/Apps Script
+    for(let i = 0; i < validos.length; i++){
+      const { file, tipo } = validos[i];
+      status.textContent = `Enviando ${i + 1} de ${validos.length}: ${file.name}`;
+      try{
+        if(tipo === 'video'){
+          await enviarVideoCloudinary(file);
+        } else {
+          await enviarUmArquivo(file);
+        }
+      }catch(e){
+        console.error(e);
+        status.textContent = `Falha ao enviar "${file.name}": ${e.message || e} — pulando pro próximo.`;
+        await new Promise(r => setTimeout(r, 2500));
+      }
+    }
+
+    document.getElementById('video-file-input').value = '';
+
+    // Confere de verdade se os itens foram salvos (o envio usa modo "no-cors",
+    // então o navegador não enxerga erros do servidor sem essa checagem)
+    status.textContent = 'Confirmando envio…';
+    await new Promise(r => setTimeout(r, 2500));
+    const depoisDeEnviar = await carregarVideos();
+    const novos = depoisDeEnviar.length - totalAntes;
+
+    if(novos >= validos.length){
+      status.textContent = `Concluído! ${validos.length} item(ns) enviados.`;
+      setTimeout(() => { if(status.textContent.startsWith('Concluído')) status.textContent = ''; }, 6000);
+    } else if(novos > 0){
+      status.textContent = `Atenção: só ${novos} de ${validos.length} arquivo(s) foram salvos de fato. Tente reenviar os que faltaram.`;
+    } else {
+      status.textContent = `Nenhum arquivo foi salvo, mesmo o envio parecendo concluído. Isso costuma acontecer com fotos em formato HEIC/HEIF (padrão do iPhone) ou arquivos sem o tipo reconhecido — tente converter pra JPG/PNG, ou use a aba "Por link".`;
+    }
+
+    renderVideoList();
+  }
+
+  async function removerVideo(id){
+    try{
+      await fetch(API_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        body: JSON.stringify({ action: 'removerVideo', id })
+      });
+    }catch(e){ console.error(e); }
+    await renderVideoList();
+  }
+
+  async function renderVideoList(){
+    const list = document.getElementById('video-list');
+    const label = document.getElementById('video-list-label');
+    list.innerHTML = '<div class="empty-note-dark">Carregando…</div>';
+    const videos = await carregarVideos();
+    videosAtuais = videos;
+    label.textContent = `Itens no loop (${videos.length})`;
+    if(videos.length === 0){
+      list.innerHTML = '<div class="empty-note-dark">Nenhum item adicionado ainda.</div>';
+      return;
+    }
+    list.innerHTML = videos.map(v => `
+      <div class="video-item">
+        <span>${v.tipo === 'imagem' ? '🖼️' : '🎬'} ${v.label || v.url}${v.tipo === 'imagem' ? ' · ' + (v.duracao || 40) + 's' : ''}</span>
+        <button onclick="removerVideo('${v.id}')">Remover</button>
+      </div>
+    `).join('');
+  }
+
+  // Atualiza a lista periodicamente (caso outra pessoa cadastre em outro computador)
+  setInterval(inicializar, 5000);
+  inicializar();
+</script>
+
+</body>
+</html>
