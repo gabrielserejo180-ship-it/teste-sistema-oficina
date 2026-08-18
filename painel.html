@@ -230,17 +230,22 @@
   }
   .site-externo-pane.ativo{ width:38%; border-left-width:1px; }
   .site-externo-pane iframe{ width:100%; height:100%; border:none; display:block; }
+  .site-externo-pane video{ width:100%; height:100%; object-fit:contain; display:none; background:#000; }
   .site-externo-pane-label{
     position:absolute; top:14px; left:14px; z-index:1;
     font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.1em; text-transform:uppercase;
     color:#D8DBE0; background:rgba(0,0,0,0.55); padding:5px 11px; border-radius:5px;
   }
-  .site-externo-abrir-btn{
-    position:absolute; top:12px; right:14px; z-index:1;
+  .site-externo-btns{ position:absolute; top:12px; right:14px; z-index:1; display:flex; gap:8px; }
+  .site-externo-abrir-btn, .site-externo-espelhar-btn{
     font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600; letter-spacing:0.04em; text-transform:uppercase;
-    background:var(--brand); color:#fff; border:none; padding:7px 13px; border-radius:5px; cursor:pointer;
+    border:none; padding:7px 13px; border-radius:5px; cursor:pointer;
   }
+  .site-externo-abrir-btn{ background:var(--brand); color:#fff; }
   .site-externo-abrir-btn:hover{ background:var(--brand-glow); }
+  .site-externo-espelhar-btn{ background:var(--blue); color:#fff; }
+  .site-externo-espelhar-btn:hover{ background:#4BA3EE; }
+  .site-externo-espelhar-btn.ativo{ background:var(--green); }
 </style>
 </head>
 <body>
@@ -296,7 +301,11 @@
 
 <div class="site-externo-pane" id="site-externo-pane">
   <div class="site-externo-pane-label">Site externo</div>
-  <button class="site-externo-abrir-btn" id="site-externo-abrir-btn" onclick="window.open(siteExternoUrl, '_blank')">Abrir em nova aba ↗</button>
+  <div class="site-externo-btns">
+    <button class="site-externo-abrir-btn" id="site-externo-abrir-btn" onclick="window.open(siteExternoUrl, '_blank')">Abrir em nova aba ↗</button>
+    <button class="site-externo-espelhar-btn" id="site-externo-espelhar-btn" onclick="iniciarEspelhamento()">Espelhar tela</button>
+  </div>
+  <video id="site-externo-video" autoplay muted></video>
   <iframe id="site-externo-frame"></iframe>
 </div>
 
@@ -604,6 +613,31 @@
     itemIndex = 0;
     if(estavaVazia && videoPlaylist.length > 0) tocarProximoItem();
     if(videoPlaylist.length === 0) tocarProximoItem();
+  }
+
+  // ===== Espelhamento de tela/aba (contorna bloqueio de iframe de sites como Google/ChatGPT/MicroWork) =====
+  async function iniciarEspelhamento(){
+    const video = document.getElementById('site-externo-video');
+    const frame = document.getElementById('site-externo-frame');
+    const btn = document.getElementById('site-externo-espelhar-btn');
+    try{
+      const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+      video.srcObject = stream;
+      video.style.display = 'block';
+      frame.style.display = 'none';
+      btn.textContent = 'Espelhando...';
+      btn.classList.add('ativo');
+
+      // Quando a pessoa clicar em "Parar de compartilhar" (barra do navegador), volta ao normal
+      stream.getVideoTracks()[0].addEventListener('ended', () => {
+        video.style.display = 'none';
+        frame.style.display = 'block';
+        btn.textContent = 'Espelhar tela';
+        btn.classList.remove('ativo');
+      });
+    }catch(e){
+      console.error('Espelhamento cancelado ou não permitido:', e);
+    }
   }
 
   // ===== Painel lateral fixo com o site externo (sempre visível, sem alternância) =====
