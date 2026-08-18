@@ -221,18 +221,30 @@
   @media (max-width:720px){
     .painel-top{ flex-direction:column; align-items:flex-start; gap:10px; }
   }
+  .split-container{ display:flex; min-height:100vh; align-items:stretch; }
+  .painel-main-pane{ flex:1; min-width:0; }
+  .site-externo-pane{
+    width:0; overflow:hidden; flex-shrink:0; position:relative;
+    border-left:0 solid var(--hairline); background:#000;
+    transition:width .45s ease;
+  }
+  .site-externo-pane.ativo{ width:38%; border-left-width:1px; }
+  .site-externo-pane iframe{ width:100%; height:100%; border:none; display:block; }
+  .site-externo-pane-label{
+    position:absolute; top:14px; left:14px; z-index:1;
+    font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.1em; text-transform:uppercase;
+    color:#D8DBE0; background:rgba(0,0,0,0.55); padding:5px 11px; border-radius:5px;
+  }
 </style>
 </head>
 <body>
 
 
+<div class="split-container">
+<div class="painel-main-pane">
+
 <div id="painel">
   <div class="hazard-bar"></div>
-
-  <!-- Alterna com a tela normal a cada 2 minutos, mostrando um site externo em tela cheia -->
-  <div id="site-externo-overlay" style="position:fixed; inset:0; z-index:50; background:#000; opacity:0; pointer-events:none; transition:opacity .8s ease;">
-    <iframe id="site-externo-frame" style="width:100%; height:100%; border:none;"></iframe>
-  </div>
 
   <div class="painel-top">
     <div class="painel-brand">
@@ -273,6 +285,15 @@
     <span>GS Tech Solutions</span>
   </div>
 </div>
+
+</div><!-- fim .painel-main-pane -->
+
+<div class="site-externo-pane" id="site-externo-pane">
+  <div class="site-externo-pane-label">Site externo</div>
+  <iframe id="site-externo-frame"></iframe>
+</div>
+
+</div><!-- fim .split-container -->
 
 <script>
   // Cole aqui a MESMA URL do Apps Script usada no recepcao.html
@@ -357,12 +378,9 @@
 
     // Se nada mudou desde a última checagem, não mexe na fila (evita a piscada)
     if(snapshot !== ultimoSnapshot){
-      const eraPrimeiraCarga = ultimoSnapshot === '';
       ultimoSnapshot = snapshot;
       const fila = atendimentos.filter(a => a.status !== 'concluido');
       renderTicker(fila);
-      // Houve uma alteração de verdade: se o site externo estiver em tela, volta pro painel na hora
-      if(!eraPrimeiraCarga) forcarVoltaPainel();
     }
 
     atualizarDestaques();
@@ -581,72 +599,32 @@
     if(videoPlaylist.length === 0) tocarProximoItem();
   }
 
-  // ===== Ciclo: alterna com um site externo, com fade suave e duração configurável =====
+  // ===== Painel lateral fixo com o site externo (sempre visível, sem alternância) =====
   let siteExternoUrl = '';
-  let duracaoPainelMs = 120000;  // padrão: 2 minutos
-  let duracaoExternoMs = 120000; // padrão: 2 minutos
-  let modoExterno = false;
-  let timeoutCiclo = null;
 
-  function mostrarPainel(){
-    modoExterno = false;
-    const overlay = document.getElementById('site-externo-overlay');
-    overlay.classList.remove('visivel');
-    overlay.style.pointerEvents = 'none';
-    // Só limpa o iframe depois que o fade terminar, pra não "estourar" preto no meio da transição
-    setTimeout(() => { if(!modoExterno) document.getElementById('site-externo-frame').src = 'about:blank'; }, 850);
-  }
-
-  function mostrarSiteExterno(){
-    if(!siteExternoUrl) return; // nada configurado, fica sempre no painel
-    modoExterno = true;
-    document.getElementById('site-externo-frame').src = siteExternoUrl;
-    const overlay = document.getElementById('site-externo-overlay');
-    overlay.style.pointerEvents = 'auto';
-    requestAnimationFrame(() => overlay.classList.add('visivel'));
-  }
-
-  function agendarProximaTroca(){
-    clearTimeout(timeoutCiclo);
-    const espera = modoExterno ? duracaoExternoMs : duracaoPainelMs;
-    timeoutCiclo = setTimeout(() => {
-      if(modoExterno){ mostrarPainel(); } else { mostrarSiteExterno(); }
-      agendarProximaTroca();
-    }, espera);
-  }
-
-  // Chamado quando uma alteração de verdade chega enquanto o site externo está em tela:
-  // volta pro painel na hora e reinicia a contagem a partir de agora.
-  function forcarVoltaPainel(){
-    if(!modoExterno) return;
-    mostrarPainel();
-    agendarProximaTroca();
-  }
-
-  async function sincronizarConfig(){
+  async function sincronizarSiteExterno(){
     try{
       const res = await fetch(`${API_URL}?action=obterConfig`);
       const config = await res.json();
       const novoUrl = (config.site_externo_url || '').trim();
-      const novaDuracaoPainel = Math.max(5, parseInt(config.duracao_painel_segundos, 10) || 120) * 1000;
-      const novaDuracaoExterno = Math.max(5, parseInt(config.duracao_externo_segundos, 10) || 120) * 1000;
-
-      const mudouUrl = novoUrl !== siteExternoUrl;
-      const mudouDuracao = novaDuracaoPainel !== duracaoPainelMs || novaDuracaoExterno !== duracaoExternoMs;
-
+      if(novoUrl === siteExternoUrl) return;
       siteExternoUrl = novoUrl;
-      duracaoPainelMs = novaDuracaoPainel;
-      duracaoExternoMs = novaDuracaoExterno;
 
-      if(mudouUrl && !siteExternoUrl && modoExterno) mostrarPainel();
-      if(mudouUrl || mudouDuracao) agendarProximaTroca(); // aplica a mudança já na próxima troca
+      const pane = document.getElementById('site-externo-pane');
+      const frame = document.getElementById('site-externo-frame');
+      if(siteExternoUrl){
+        frame.src = siteExternoUrl;
+        pane.classList.add('ativo');
+      } else {
+        pane.classList.remove('ativo');
+        frame.src = 'about:blank';
+      }
     }catch(e){
       console.error('Erro ao carregar config:', e);
     }
   }
-  sincronizarConfig();
-  setInterval(sincronizarConfig, 15000);
-  agendarProximaTroca();
+  sincronizarSiteExterno();
+  setInterval(sincronizarSiteExterno, 15000);
 
   sincronizarVideos();
   // Verifica se a lista mudou a cada 20s (não precisa ser tão frequente quanto a fila)
