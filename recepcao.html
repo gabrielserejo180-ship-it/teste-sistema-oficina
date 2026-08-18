@@ -483,19 +483,22 @@
   }
 
   // ===== Chamar cliente por voz (botão na lista) =====
-  function falarCliente(nome, placa, senha){
-    if(!window.speechSynthesis){
-      alert('Esse navegador não suporta voz.');
-      return;
+  // ===== Chamar cliente por voz — manda o comando pro Painel (TV), que é quem fala de verdade =====
+  async function falarCliente(nome, placa, senha){
+    try{
+      await fetch(API_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        body: JSON.stringify({
+          action: 'salvarConfig',
+          chave: 'chamada_manual',
+          valor: JSON.stringify({ nome, placa, senha, ts: Date.now() })
+        })
+      });
+    }catch(e){
+      console.error(e);
+      alert('Não consegui enviar a chamada. Verifica a conexão.');
     }
-    const texto = `${nome}, placa ${placa}. Senha ${senha}.`;
-    const utter = new SpeechSynthesisUtterance(texto);
-    utter.lang = 'pt-BR';
-    utter.rate = 0.95;
-    const vozes = speechSynthesis.getVoices();
-    const vozPt = vozes.find(v => v.lang && v.lang.toLowerCase().startsWith('pt'));
-    if(vozPt) utter.voice = vozPt;
-    speechSynthesis.speak(utter);
   }
 
   function renderLista(){

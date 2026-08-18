@@ -364,9 +364,10 @@
 
   const jaAnunciados = new Set();
 
-  function anunciarPorVoz(a){
+  function anunciarPorVoz(a, fraseCustom){
     if(!window.speechSynthesis || !vozDesbloqueada) return;
-    const texto = `${a.nome}, placa ${a.placa}. Senha ${a.senha}. ${fraseStatus[a.status] || ''}`;
+    const frase = fraseCustom || fraseStatus[a.status] || '';
+    const texto = `${a.nome}, placa ${a.placa}. Senha ${a.senha}. ${frase}`;
     const utter = new SpeechSynthesisUtterance(texto);
     utter.lang = 'pt-BR';
     if(vozPt) utter.voice = vozPt;
@@ -381,6 +382,23 @@
 
     speechSynthesis.speak(utter);
   }
+
+  // ===== Chamada manual disparada pelo botão 🔊 na Recepção =====
+  let ultimaChamadaManualTs = 0;
+  async function sincronizarChamadaManual(){
+    try{
+      const res = await fetch(`${API_URL}?action=obterConfig`);
+      const config = await res.json();
+      if(!config.chamada_manual) return;
+      const chamada = JSON.parse(config.chamada_manual);
+      if(!chamada.ts || chamada.ts <= ultimaChamadaManualTs) return;
+      ultimaChamadaManualTs = chamada.ts;
+      anunciarPorVoz(chamada, 'Por favor, dirija-se à recepção.');
+    }catch(e){
+      console.error('Erro ao checar chamada manual:', e);
+    }
+  }
+  setInterval(sincronizarChamadaManual, 3000);
 
   const DESTAQUE_DURACAO_MS = 60000; // 1 minuto
   let ultimoSnapshot = '';
