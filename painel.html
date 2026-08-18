@@ -235,6 +235,12 @@
     font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.1em; text-transform:uppercase;
     color:#D8DBE0; background:rgba(0,0,0,0.55); padding:5px 11px; border-radius:5px;
   }
+  .site-externo-abrir-btn{
+    position:absolute; top:12px; right:14px; z-index:1;
+    font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600; letter-spacing:0.04em; text-transform:uppercase;
+    background:var(--brand); color:#fff; border:none; padding:7px 13px; border-radius:5px; cursor:pointer;
+  }
+  .site-externo-abrir-btn:hover{ background:var(--brand-glow); }
 </style>
 </head>
 <body>
@@ -290,6 +296,7 @@
 
 <div class="site-externo-pane" id="site-externo-pane">
   <div class="site-externo-pane-label">Site externo</div>
+  <button class="site-externo-abrir-btn" id="site-externo-abrir-btn" onclick="window.open(siteExternoUrl, '_blank')">Abrir em nova aba ↗</button>
   <iframe id="site-externo-frame"></iframe>
 </div>
 

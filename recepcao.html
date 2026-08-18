@@ -213,30 +213,9 @@
     .rec-header > div[style]{ position:static !important; margin-top:14px; }
     .rec-header-inner{ flex-wrap:wrap; }
   }
-  .split-container{ display:flex; min-height:100vh; align-items:stretch; }
-  .rec-main-pane{ flex:1; min-width:0; }
-  .site-externo-pane{
-    width:0; overflow:hidden; flex-shrink:0; position:relative;
-    border-left:0 solid var(--paper-line); background:#0B0C0F;
-    transition:width .45s ease;
-  }
-  .site-externo-pane.ativo{ width:42%; border-left-width:1px; }
-  .site-externo-pane iframe{ width:100%; height:100%; border:none; display:block; }
-  .site-externo-pane-label{
-    position:absolute; top:14px; left:14px; z-index:1;
-    font-family:'Oswald',sans-serif; font-size:11px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase;
-    color:#D8DBE0; background:rgba(0,0,0,0.55); padding:5px 11px; border-radius:5px;
-  }
-  @media (max-width:900px){
-    .split-container{ flex-direction:column; }
-    .site-externo-pane.ativo{ width:100%; height:340px; border-left:none; border-top:1px solid var(--paper-line); }
-  }
 </style>
 </head>
 <body>
-
-<div class="split-container">
-<div class="rec-main-pane">
 
 <div class="hazard-bar"></div>
 <div class="rec-header">
@@ -306,12 +285,12 @@
     </div>
 
     <div class="settings-section" style="border-top:1px solid #3A3F49; padding-top:18px; margin-top:6px;">
-      <label>Site externo (aparece fixo ao lado, tipo tela dividida)</label>
+      <label>Site externo (aparece fixo ao lado, só no Painel/TV)</label>
       <div class="url-row">
         <input type="text" id="site-externo-input" placeholder="Ex: https://www.honda.com.br">
         <button onclick="salvarSiteExterno()">Salvar</button>
       </div>
-      <p style="font-size:11.5px; color:#7A7F87; margin:8px 0 0;">Esse site aparece permanentemente do lado direito, tanto na Recepção quanto no Painel, dividindo a tela — sem cobrir nada, sem precisar de tempo. Deixe o link em branco pra desativar.</p>
+      <p style="font-size:11.5px; color:#7A7F87; margin:8px 0 0;">Esse site aparece permanentemente do lado direito da tela do Painel (TV), dividindo a tela — sem cobrir nada, sem precisar de tempo. Não aparece aqui na Recepção. Deixe o link em branco pra desativar.</p>
       <p id="site-externo-status" style="font-size:12px; color:var(--brand); margin:6px 0 0;"></p>
     </div>
 
@@ -357,15 +336,6 @@
     <span>Sistema desenvolvido por <strong>GS Tech Solutions</strong></span>
   </div>
 </div>
-
-</div><!-- fim .rec-main-pane -->
-
-<div class="site-externo-pane" id="site-externo-pane">
-  <div class="site-externo-pane-label">Site externo</div>
-  <iframe id="site-externo-frame"></iframe>
-</div>
-
-</div><!-- fim .split-container -->
 
 <script>
   // Cole aqui a URL do seu Web App do Apps Script (termina em /exec)
@@ -769,33 +739,6 @@
       </div>
     `).join('');
   }
-
-  // ===== Painel lateral fixo com o site externo (sempre visível, sem alternância) =====
-  let siteExternoUrl = '';
-
-  async function sincronizarSiteExterno(){
-    try{
-      const res = await fetch(`${API_URL}?action=obterConfig`);
-      const config = await res.json();
-      const novoUrl = (config.site_externo_url || '').trim();
-      if(novoUrl === siteExternoUrl) return;
-      siteExternoUrl = novoUrl;
-
-      const pane = document.getElementById('site-externo-pane');
-      const frame = document.getElementById('site-externo-frame');
-      if(siteExternoUrl){
-        frame.src = siteExternoUrl;
-        pane.classList.add('ativo');
-      } else {
-        pane.classList.remove('ativo');
-        frame.src = 'about:blank';
-      }
-    }catch(e){
-      console.error('Erro ao carregar config:', e);
-    }
-  }
-  sincronizarSiteExterno();
-  setInterval(sincronizarSiteExterno, 15000);
 
   // Atualiza a lista periodicamente (caso outra pessoa cadastre em outro computador)
   setInterval(inicializar, 5000);
